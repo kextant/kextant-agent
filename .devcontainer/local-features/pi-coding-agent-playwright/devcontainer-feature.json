@@ -1,0 +1,8 @@
+{
+	"id": "pi-coding-agent-playwright",
+	"name": "Installs pi-coding-agent and Playwright Chromium",
+	"description": "Installs Node-based tooling used in this devcontainer.",
+	"installsAfter": [
+		"ghcr.io/devcontainers/features/node"
+	]
+}

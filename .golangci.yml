@@ -1,0 +1,60 @@
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck
+    - gofmt
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - revive
+    - staticcheck
+    - unused
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: false
+    exclude-functions:
+      - (io.Closer).Close
+      - fmt.Fprintln
+      - fmt.Fprintf
+      - fmt.Println
+      - fmt.Printf
+  gosec:
+    severity: medium
+    confidence: medium
+    excludes:
+      - G104
+      - G304
+  revive:
+    severity: warning
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: range
+      - name: errorf
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+    - path: cmd/agent/main.go
+      linters:
+        - revive
+  exclude:
+    - "exported .* should have comment"
+    - "comment on exported"
+    - "should have a package comment"

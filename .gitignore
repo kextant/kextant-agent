@@ -1,0 +1,38 @@
+# Binaries
+kextant-agent
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Coverage
+*.out
+coverage.txt
+coverage.html
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+bin/
+
+# Local config
+.env
+*.local.yaml
+
+# Test artifacts
+test/scan-output.json
+test/test-run.log

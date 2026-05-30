@@ -323,7 +323,7 @@ A release is acceptable only when:
 5. RBAC changes are called out clearly.
 6. Manifest schema changes are backward compatible or documented with migration guidance.
 7. Tests pass.
-8. A local kind/minikube smoke test succeeds.
+8. Containerized functional smoke tests succeed.
 
 ---
 
@@ -342,14 +342,26 @@ For the Kextant product to be marketable, this repo must deliver:
 
 ---
 
-## 12. Immediate implementation backlog
+## 12. v0.1.0 prototype completion criteria
 
-1. Add manifest types.
-2. Add inventory collector for nodes, workloads, Helm releases, and CRDs.
-3. Add local manifest command.
-4. Add redaction configuration.
-5. Add cloud upload client.
-6. Add Helm chart.
-7. Update RBAC profiles.
-8. Add tests for privacy and manifest schema.
-9. Update README with new install and privacy model.
+The v0.1.0 prototype is complete when these implementation items exist and pass CI:
+
+1. Manifest types and schema version `1.0.0`.
+2. Inventory collector for nodes, workloads, Helm releases, CRDs, and Kubernetes server version.
+3. Local `inventory` command and `scan --manifest`/`scan --upload` flows.
+4. Redaction configuration for names, labels, and annotations.
+5. Cloud upload client with TLS, API key authentication, retry behavior, and optional mTLS files.
+6. Helm chart with Deployment and CronJob modes.
+7. Minimal/full RBAC support through Helm, including optional Helm Secret access.
+8. Unit tests for privacy, manifest schema, cloud upload, scanner behavior, reports, and delivery helpers.
+9. Containerized functional smoke tests.
+10. GitHub Actions pipeline for linting, tests, coverage, container build, and GHCR publishing.
+11. README and docs focused in the `docs/` directory.
+
+## 13. Post-v0.1.0 backlog
+
+1. Add end-to-end Kubernetes functional tests using kind in CI.
+2. Add Helm chart lint/template validation to CI once Helm is available in the runner.
+3. Raise coverage threshold as cloud-dependent paths become easier to isolate.
+4. Add signed images and SBOM/provenance generation.
+5. Add richer manifest compatibility tests shared with `kextant-cloud`.

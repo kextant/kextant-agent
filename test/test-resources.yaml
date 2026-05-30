@@ -1,0 +1,1143 @@
+---
+# Test resources for Kextant Agent functional testing
+# Each deployment is designed to trigger EXACTLY ONE specific check
+# All other aspects follow best practices to avoid triggering other checks
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kextant-agent-test
+  labels:
+    test: "kextant-agent"
+    purpose: "functional-testing"
+
+---
+# RES001: Missing CPU requests (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: missing-cpu-requests
+  namespace: kextant-agent-test
+  labels:
+    test-case: "RES001"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: missing-cpu-requests
+  template:
+    metadata:
+      labels:
+        app: missing-cpu-requests
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            # Missing CPU request - THIS IS THE TEST
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# RES002: Missing CPU limits (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: missing-cpu-limits
+  namespace: kextant-agent-test
+  labels:
+    test-case: "RES002"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: missing-cpu-limits
+  template:
+    metadata:
+      labels:
+        app: missing-cpu-limits
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            # Missing CPU limit - THIS IS THE TEST
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# RES003: Missing memory requests (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: missing-memory-requests
+  namespace: kextant-agent-test
+  labels:
+    test-case: "RES003"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: missing-memory-requests
+  template:
+    metadata:
+      labels:
+        app: missing-memory-requests
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            # Missing memory request - THIS IS THE TEST
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# RES004: Missing memory limits (CRITICAL - ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: missing-memory-limits
+  namespace: kextant-agent-test
+  labels:
+    test-case: "RES004"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: missing-memory-limits
+  template:
+    metadata:
+      labels:
+        app: missing-memory-limits
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            # Missing memory limit - THIS IS THE TEST
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# RES005: CPU limit equals request (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: no-cpu-burst
+  namespace: kextant-agent-test
+  labels:
+    test-case: "RES005"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: no-cpu-burst
+  template:
+    metadata:
+      labels:
+        app: no-cpu-burst
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "100m"  # Same as request - THIS IS THE TEST
+            memory: "128Mi"
+          requests:
+            cpu: "100m"  # Same as limit - THIS IS THE TEST
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# PRB001: Missing readiness probe (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: missing-readiness-probe
+  namespace: kextant-agent-test
+  labels:
+    test-case: "PRB001"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: missing-readiness-probe
+  template:
+    metadata:
+      labels:
+        app: missing-readiness-probe
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        # Missing readiness probe - THIS IS THE TEST
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# PRB002: Missing liveness probe (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: missing-liveness-probe
+  namespace: kextant-agent-test
+  labels:
+    test-case: "PRB002"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: missing-liveness-probe
+  template:
+    metadata:
+      labels:
+        app: missing-liveness-probe
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        # Missing liveness probe - THIS IS THE TEST
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# PRB004: Identical liveness and readiness probes (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identical-probes
+  namespace: kextant-agent-test
+  labels:
+    test-case: "PRB004"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: identical-probes
+  template:
+    metadata:
+      labels:
+        app: identical-probes
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /health  # Same path - THIS IS THE TEST
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health  # Same path - THIS IS THE TEST
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# REP001: Single replica deployment (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: single-replica
+  namespace: kextant-agent-test
+  labels:
+    test-case: "REP001"
+spec:
+  replicas: 1  # Single replica - THIS IS THE TEST
+  selector:
+    matchLabels:
+      app: single-replica
+  template:
+    metadata:
+      labels:
+        app: single-replica
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# REP002: No PodDisruptionBudget (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: no-pdb
+  namespace: kextant-agent-test
+  labels:
+    test-case: "REP002"
+spec:
+  replicas: 3  # Multiple replicas but no PDB - THIS IS THE TEST
+  selector:
+    matchLabels:
+      app: no-pdb
+  template:
+    metadata:
+      labels:
+        app: no-pdb
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# IMG001: Using :latest tag (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: using-latest-tag
+  namespace: kextant-agent-test
+  labels:
+    test-case: "IMG001"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: using-latest-tag
+  template:
+    metadata:
+      labels:
+        app: using-latest-tag
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:latest  # Using :latest - THIS IS THE TEST
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# IMG002: Image has no tag specified (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: no-image-tag
+  namespace: kextant-agent-test
+  labels:
+    test-case: "IMG002"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: no-image-tag
+  template:
+    metadata:
+      labels:
+        app: no-image-tag
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx  # No tag - THIS IS THE TEST
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# IMG004: Using Always policy with specific tag (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: always-with-tag
+  namespace: kextant-agent-test
+  labels:
+    test-case: "IMG004"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: always-with-tag
+  template:
+    metadata:
+      labels:
+        app: always-with-tag
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: Always  # Always with specific tag - THIS IS THE TEST
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# SEC001: Running as root user (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: running-as-root
+  namespace: kextant-agent-test
+  labels:
+    test-case: "SEC001"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: running-as-root
+  template:
+    metadata:
+      labels:
+        app: running-as-root
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 0  # Running as root - THIS IS THE TEST
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# SEC002: Privileged container (CRITICAL - ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: privileged-container
+  namespace: kextant-agent-test
+  labels:
+    test-case: "SEC002"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: privileged-container
+  template:
+    metadata:
+      labels:
+        app: privileged-container
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true  # Privileged - THIS IS THE TEST
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# SEC003: Root filesystem writable (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: writable-root-fs
+  namespace: kextant-agent-test
+  labels:
+    test-case: "SEC003"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: writable-root-fs
+  template:
+    metadata:
+      labels:
+        app: writable-root-fs
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: false  # Writable root FS - THIS IS THE TEST
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+
+---
+# SEC004: Privilege escalation allowed (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: privilege-escalation
+  namespace: kextant-agent-test
+  labels:
+    test-case: "SEC004"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: privilege-escalation
+  template:
+    metadata:
+      labels:
+        app: privilege-escalation
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: true  # Allow privilege escalation - THIS IS THE TEST
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# SEC005: All capabilities not dropped (ONLY this check should fail)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capabilities-not-dropped
+  namespace: kextant-agent-test
+  labels:
+    test-case: "SEC005"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: capabilities-not-dropped
+  template:
+    metadata:
+      labels:
+        app: capabilities-not-dropped
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          # Missing capabilities drop - THIS IS THE TEST
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# Good deployment for baseline (should pass all checks)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: good-deployment
+  namespace: kextant-agent-test
+  labels:
+    test-case: "BASELINE"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: good-deployment
+  template:
+    metadata:
+      labels:
+        app: good-deployment
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: app
+        image: nginx:1.25.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        startupProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          failureThreshold: 30
+        volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+      volumes:
+      - name: cache
+        emptyDir: {}
+      - name: run
+        emptyDir: {}
+
+---
+# PodDisruptionBudget for the good deployment
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: good-deployment-pdb
+  namespace: kextant-agent-test
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: good-deployment

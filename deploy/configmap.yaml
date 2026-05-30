@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kextant-config
+  namespace: kextant
+  labels:
+    app.kubernetes.io/name: kextant
+data:
+  # General settings
+  CLUSTER_NAME: "kubernetes-cluster"
+  CLUSTER_ID: ""
+  REPORT_SCHEDULE: "0 9 * * 1"
+  TIMEZONE: "UTC"
+
+  # Health checks
+  CHECKS_RESOURCES_ENABLED: "true"
+  CHECKS_PROBES_ENABLED: "true"
+  CHECKS_REPLICAS_ENABLED: "true"
+  CHECKS_IMAGES_ENABLED: "true"
+  CHECKS_SECURITY_CONTEXT_ENABLED: "true"
+  CHECKS_DEPRECATED_API_ENABLED: "true"
+  CHECKS_NAMESPACE_ENABLED: "true"
+
+  # Inventory collection
+  # Helm release metadata improves matching accuracy but requires read access to Helm release secrets.
+  HELM_METADATA_ENABLED: "false"
+
+  # Namespace filtering
+  SCAN_NAMESPACES: ""
+  EXCLUDE_NAMESPACES: "kube-system,kube-public,kube-node-lease,kextant"
+
+  # Privacy/redaction
+  REDACTION_NAMESPACE_NAMES: "plain"     # plain, hashed, omitted
+  REDACTION_WORKLOAD_NAMES: "plain"      # plain, hashed, omitted
+  REDACTION_LABELS: "allowlist"          # all, allowlist, none
+  REDACTION_ANNOTATIONS: "allowlist"     # all, allowlist, none
+  REDACTION_LABEL_ALLOWLIST: "app,k8s-app,name,version,app.kubernetes.io/name,app.kubernetes.io/instance,app.kubernetes.io/version,app.kubernetes.io/component,app.kubernetes.io/part-of,app.kubernetes.io/managed-by,helm.sh/chart"
+  REDACTION_ANNOTATION_ALLOWLIST: "meta.helm.sh/release-name,meta.helm.sh/release-namespace"
+
+  # Kextant Cloud upload. Disabled by default; enable after creating a cluster in Kextant Cloud.
+  KEXTANT_CLOUD_ENABLED: "false"
+  KEXTANT_CLOUD_ENDPOINT: "https://api.kextant.com"
+  KEXTANT_CLOUD_TLS_SKIP_VERIFY: "false"
+  KEXTANT_CLOUD_UPLOAD_RETRIES: "3"
+
+  # Delivery targets
+  LOG_ENABLED: "true"
+  LOG_MULTILINE: "true"
+  SLACK_ENABLED: "false"
+  EMAIL_ENABLED: "false"
+  EMAIL_RECIPIENTS: ""
+  EMAIL_FROM: "kextant@example.com"
+  EMAIL_SUBJECT: "Kextant Health Report: {{.ClusterName}} - {{.Date}}"
+
+  # SMTP configuration
+  SMTP_HOST: ""
+  SMTP_PORT: "587"
+  SMTP_AUTH_TYPE: "plain"
+  SMTP_TLS_MODE: "starttls"
+  SMTP_TLS_SKIP_VERIFY: "false"
+
+  # Report settings
+  REPORT_MIN_SEVERITY: "warning"
+  REPORT_INCLUDE_PASSED: "false"
+  REPORT_MAX_ISSUES_PER_CATEGORY: "10"
+
+  # Exemptions
+  EXEMPT_CHECKS: ""
