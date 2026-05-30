@@ -1,0 +1,178 @@
+---
+# Test Case 1: Deployment exempt from REP001 (single replica)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exempt-rep001
+  namespace: kextant-test
+  annotations:
+    kextant.com/skip-checks: "REP001"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: exempt-rep001
+  template:
+    metadata:
+      labels:
+        app: exempt-rep001
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.27.3
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+---
+# Test Case 2: Deployment with multiple exemptions (missing resources and probes)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exempt-multiple
+  namespace: kextant-test
+  annotations:
+    kextant.com/skip-checks: "RES001,RES002,PRB001"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: exempt-multiple
+  template:
+    metadata:
+      labels:
+        app: exempt-multiple
+    spec:
+      containers:
+      - name: busybox
+        image: busybox:1.37.0
+        command: ["sleep", "infinity"]
+        # Intentionally missing CPU requests/limits and readiness probe
+        resources:
+          requests:
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+
+---
+# Test Case 3: Deployment with wildcard exemption
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exempt-wildcard
+  namespace: kextant-test
+  annotations:
+    kextant.com/skip-checks: "*"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: exempt-wildcard
+  template:
+    metadata:
+      labels:
+        app: exempt-wildcard
+    spec:
+      containers:
+      - name: alpine
+        image: alpine:latest
+        command: ["sleep", "infinity"]
+        # Violates multiple checks: latest tag, missing resources, missing probes, etc.
+
+---
+# Test Case 4: Deployment with partial exemption (only RES001)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: partial-exempt
+  namespace: kextant-test
+  annotations:
+    kextant.com/skip-checks: "RES001"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: partial-exempt
+  template:
+    metadata:
+      labels:
+        app: partial-exempt
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.27.3
+        # Missing CPU requests (RES001) - should be exempt
+        # Missing CPU limits (RES002) - should NOT be exempt
+        resources:
+          requests:
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+
+---
+# Test Case 5: Deployment with pod-level exemption override
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-override
+  namespace: kextant-test
+  annotations:
+    kextant.com/skip-checks: "REP001"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-override
+  template:
+    metadata:
+      labels:
+        app: pod-override
+      annotations:
+        kextant.com/skip-checks: "RES001,RES002"
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.27.3
+        # Pod should inherit REP001 from deployment AND have RES001,RES002
+        resources:
+          requests:
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+
+---
+# Test Case 6: Mailhog deployment with exemptions (matches production)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailhog-test
+  namespace: kextant-test
+  annotations:
+    kextant.com/skip-checks: "REP001,IMG001"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailhog-test
+  template:
+    metadata:
+      labels:
+        app: mailhog-test
+    spec:
+      containers:
+      - name: mailhog
+        image: mailhog/mailhog:latest
+        ports:
+        - containerPort: 1025
+        - containerPort: 8025
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi

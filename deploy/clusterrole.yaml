@@ -1,0 +1,75 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kextant-reader
+  labels:
+    app.kubernetes.io/name: kextant
+rules:
+  # Core resources required for health checks and inventory.
+  - apiGroups: [""]
+    resources:
+      - pods
+      - services
+      - endpoints
+      - namespaces
+      - resourcequotas
+      - limitranges
+      - configmaps
+      - nodes
+    verbs: ["get", "list"]
+
+  # Optional Helm release metadata. This grants read access to Secret metadata and Helm release payloads.
+  # Kextant never serializes or uploads Secret values. Disable HELM_METADATA_ENABLED if this is not acceptable.
+  - apiGroups: [""]
+    resources:
+      - secrets
+    verbs: ["get", "list"]
+
+  # Apps resources.
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - daemonsets
+      - statefulsets
+      - replicasets
+    verbs: ["get", "list"]
+
+  # Networking.
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+      - ingressclasses
+      - networkpolicies
+    verbs: ["get", "list"]
+
+  # Legacy ingress API probing when deprecated APIs are still served.
+  - apiGroups: ["extensions"]
+    resources:
+      - ingresses
+    verbs: ["get", "list"]
+
+  # Policy.
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+      - podsecuritypolicies
+    verbs: ["get", "list"]
+
+  # Batch.
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list"]
+
+  # Autoscaling.
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["get", "list"]
+
+  # CRDs support operator/component detection in version intelligence.
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources:
+      - customresourcedefinitions
+    verbs: ["get", "list"]

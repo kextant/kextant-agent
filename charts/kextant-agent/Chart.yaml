@@ -1,0 +1,12 @@
+apiVersion: v2
+name: kextant-agent
+description: Trusted read-only Kubernetes health scanner and inventory collector for Kextant Version Intelligence
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://kextant.com
+sources:
+  - https://github.com/kextant/kextant-agent
+maintainers:
+  - name: Kextant
+    url: https://kextant.com

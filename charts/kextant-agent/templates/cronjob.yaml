@@ -1,0 +1,64 @@
+{{- if eq .Values.mode "cronjob" }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "kextant-agent.fullname" . }}
+  labels:
+    {{- include "kextant-agent.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.cronJob.schedule | quote }}
+  successfulJobsHistoryLimit: {{ .Values.cronJob.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cronJob.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "kextant-agent.selectorLabels" . | nindent 12 }}
+            {{- with .Values.podLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          annotations:
+            {{- toYaml .Values.podAnnotations | nindent 12 }}
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ include "kextant-agent.serviceAccountName" . }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: agent
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              args:
+                - "scan"
+                - "--send"
+                {{ if .Values.config.cloud.enabled }}
+                - "--upload"
+                {{ end }}
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              envFrom:
+                - configMapRef:
+                    name: {{ include "kextant-agent.fullname" . }}
+                - secretRef:
+                    name: {{ include "kextant-agent.secretName" . }}
+                    optional: true
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

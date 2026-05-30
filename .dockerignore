@@ -1,0 +1,14 @@
+.git
+.github
+.gitlab
+.devcontainer
+.vscode
+coverage.out
+coverage.txt
+coverage.html
+kextant-agent
+bin/
+test/*.log
+*.md
+!README.md
+!docs/PRODUCT_REQUIREMENTS.md

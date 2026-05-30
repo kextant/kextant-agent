@@ -1,0 +1,59 @@
+# This file must be named 1-namespace.yaml to ensure it is applied first
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kextant
+  labels:
+    app.kubernetes.io/name: kextant
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: kextant-default-quota
+  namespace: kextant
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "500m"
+    requests.memory: "1Gi"
+    limits.cpu: "2"
+    limits.memory: "2Gi"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: kextant-default-limits
+  namespace: kextant
+spec:
+  limits:
+    - type: Container
+      max:
+        cpu: "1"
+        memory: "512Mi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"
+      default:
+        cpu: "200m"
+        memory: "256Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "128Mi"
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-internal-namespace
+  namespace: kextant
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}

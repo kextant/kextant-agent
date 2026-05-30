@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kextant-agent.fullname" . }}
+  labels:
+    {{- include "kextant-agent.labels" . | nindent 4 }}
+data:
+  CLUSTER_NAME: {{ .Values.config.clusterName | quote }}
+  CLUSTER_ID: {{ .Values.config.clusterID | quote }}
+  REPORT_SCHEDULE: {{ .Values.config.reportSchedule | quote }}
+  TIMEZONE: {{ .Values.config.timezone | quote }}
+  CHECKS_RESOURCES_ENABLED: {{ .Values.config.checks.resources | quote }}
+  CHECKS_PROBES_ENABLED: {{ .Values.config.checks.probes | quote }}
+  CHECKS_REPLICAS_ENABLED: {{ .Values.config.checks.replicas | quote }}
+  CHECKS_IMAGES_ENABLED: {{ .Values.config.checks.images | quote }}
+  CHECKS_SECURITY_CONTEXT_ENABLED: {{ .Values.config.checks.securityContext | quote }}
+  CHECKS_DEPRECATED_API_ENABLED: {{ .Values.config.checks.deprecatedAPI | quote }}
+  CHECKS_NAMESPACE_ENABLED: {{ .Values.config.checks.namespace | quote }}
+  HELM_METADATA_ENABLED: {{ .Values.config.inventory.helmMetadataEnabled | quote }}
+  SCAN_NAMESPACES: {{ .Values.config.scanNamespaces | quote }}
+  EXCLUDE_NAMESPACES: {{ .Values.config.excludeNamespaces | quote }}
+  EXEMPT_CHECKS: {{ .Values.config.exemptChecks | quote }}
+  REDACTION_NAMESPACE_NAMES: {{ .Values.config.redaction.namespaceNames | quote }}
+  REDACTION_WORKLOAD_NAMES: {{ .Values.config.redaction.workloadNames | quote }}
+  REDACTION_LABELS: {{ .Values.config.redaction.labels | quote }}
+  REDACTION_ANNOTATIONS: {{ .Values.config.redaction.annotations | quote }}
+  REDACTION_LABEL_ALLOWLIST: {{ .Values.config.redaction.labelAllowlist | quote }}
+  REDACTION_ANNOTATION_ALLOWLIST: {{ .Values.config.redaction.annotationAllowlist | quote }}
+  KEXTANT_CLOUD_ENABLED: {{ .Values.config.cloud.enabled | quote }}
+  KEXTANT_CLOUD_ENDPOINT: {{ .Values.config.cloud.endpoint | quote }}
+  KEXTANT_CLOUD_TLS_SKIP_VERIFY: {{ .Values.config.cloud.tlsSkipVerify | quote }}
+  KEXTANT_CLOUD_UPLOAD_RETRIES: {{ .Values.config.cloud.uploadRetries | quote }}
+  KEXTANT_CLOUD_MTLS_CERT_FILE: {{ .Values.config.cloud.mtlsCertFile | quote }}
+  KEXTANT_CLOUD_MTLS_KEY_FILE: {{ .Values.config.cloud.mtlsKeyFile | quote }}
+  LOG_ENABLED: {{ .Values.config.delivery.logEnabled | quote }}
+  LOG_MULTILINE: {{ .Values.config.delivery.logMultiline | quote }}
+  SLACK_ENABLED: {{ .Values.config.delivery.slackEnabled | quote }}
+  EMAIL_ENABLED: {{ .Values.config.delivery.emailEnabled | quote }}
+  EMAIL_RECIPIENTS: {{ .Values.config.delivery.emailRecipients | quote }}
+  EMAIL_FROM: {{ .Values.config.delivery.emailFrom | quote }}
+  EMAIL_SUBJECT: {{ .Values.config.delivery.emailSubject | quote }}
+  SMTP_HOST: {{ .Values.config.smtp.host | quote }}
+  SMTP_PORT: {{ .Values.config.smtp.port | quote }}
+  SMTP_AUTH_TYPE: {{ .Values.config.smtp.authType | quote }}
+  SMTP_TLS_MODE: {{ .Values.config.smtp.tlsMode | quote }}
+  SMTP_TLS_SKIP_VERIFY: {{ .Values.config.smtp.tlsSkipVerify | quote }}
+  REPORT_MIN_SEVERITY: {{ .Values.config.report.minSeverity | quote }}
+  REPORT_INCLUDE_PASSED: {{ .Values.config.report.includePassed | quote }}
+  REPORT_MAX_ISSUES_PER_CATEGORY: {{ .Values.config.report.maxIssuesPerCategory | quote }}
