@@ -1,0 +1,120 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/kextant/kextant-agent
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+mode: deployment # deployment or cronjob
+cronJob:
+  schedule: "0 9 * * 1"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+rbac:
+  create: true
+  helmSecrets: false
+
+podAnnotations:
+  kextant.com/skip-checks: "REP001"
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+config:
+  clusterName: kubernetes-cluster
+  clusterID: ""
+  reportSchedule: "0 9 * * 1"
+  timezone: UTC
+  scanNamespaces: ""
+  excludeNamespaces: "kube-system,kube-public,kube-node-lease,kextant"
+  exemptChecks: ""
+
+  checks:
+    resources: true
+    probes: true
+    replicas: true
+    images: true
+    securityContext: true
+    deprecatedAPI: true
+    namespace: true
+
+  inventory:
+    helmMetadataEnabled: false
+
+  redaction:
+    namespaceNames: plain
+    workloadNames: plain
+    labels: allowlist
+    annotations: allowlist
+    labelAllowlist: "app,k8s-app,name,version,app.kubernetes.io/name,app.kubernetes.io/instance,app.kubernetes.io/version,app.kubernetes.io/component,app.kubernetes.io/part-of,app.kubernetes.io/managed-by,helm.sh/chart"
+    annotationAllowlist: "meta.helm.sh/release-name,meta.helm.sh/release-namespace"
+
+  cloud:
+    enabled: false
+    endpoint: https://api.kextant.com
+    tlsSkipVerify: false
+    uploadRetries: 3
+    mtlsCertFile: ""
+    mtlsKeyFile: ""
+
+  delivery:
+    logEnabled: true
+    logMultiline: true
+    slackEnabled: false
+    emailEnabled: false
+    emailRecipients: ""
+    emailFrom: kextant@example.com
+    emailSubject: "Kextant Health Report: {{.ClusterName}} - {{.Date}}"
+
+  smtp:
+    host: ""
+    port: "587"
+    authType: plain
+    tlsMode: starttls
+    tlsSkipVerify: false
+
+  report:
+    minSeverity: warning
+    includePassed: false
+    maxIssuesPerCategory: 10
+
+secrets:
+  create: true
+  cloudAPIKey: ""
+  slackWebhookURL: ""
+  smtpUsername: ""
+  smtpPassword: ""
+
+existingSecret: ""

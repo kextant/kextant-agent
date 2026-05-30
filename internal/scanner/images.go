@@ -32,9 +32,10 @@ func (s *Scanner) checkPodImages(ctx context.Context, pod corev1.Pod) []types.Fi
 
 	for _, container := range pod.Spec.Containers {
 		image := container.Image
+		tag := imageTag(image)
 
 		// IMG001: Latest tag used
-		if strings.HasSuffix(image, ":latest") {
+		if tag == "latest" {
 			if s.exemptions.IsExemptPod(ctx, &pod, "IMG001") {
 				continue
 			}
@@ -55,7 +56,7 @@ func (s *Scanner) checkPodImages(ctx context.Context, pod corev1.Pod) []types.Fi
 		}
 
 		// IMG002: No image tag
-		if !strings.Contains(image, ":") {
+		if tag == "" {
 			if s.exemptions.IsExemptPod(ctx, &pod, "IMG002") {
 				continue
 			}
@@ -97,9 +98,7 @@ func (s *Scanner) checkPodImages(ctx context.Context, pod corev1.Pod) []types.Fi
 		}
 
 		// IMG004: ImagePullPolicy Always with tag
-		if container.ImagePullPolicy == corev1.PullAlways &&
-			!strings.HasSuffix(image, ":latest") &&
-			strings.Contains(image, ":") {
+		if container.ImagePullPolicy == corev1.PullAlways && tag != "" && tag != "latest" {
 			if s.exemptions.IsExemptPod(ctx, &pod, "IMG004") {
 				continue
 			}
@@ -121,4 +120,14 @@ func (s *Scanner) checkPodImages(ctx context.Context, pod corev1.Pod) []types.Fi
 	}
 
 	return findings
+}
+
+func imageTag(image string) string {
+	withoutDigest, _, _ := strings.Cut(image, "@")
+	lastSlash := strings.LastIndex(withoutDigest, "/")
+	lastColon := strings.LastIndex(withoutDigest, ":")
+	if lastColon > lastSlash {
+		return withoutDigest[lastColon+1:]
+	}
+	return ""
 }

@@ -8,16 +8,18 @@ import (
 	"github.com/kextant/kextant-agent/pkg/exemptions"
 	"github.com/kextant/kextant-agent/pkg/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 type Scanner struct {
-	client     kubernetes.Interface
-	config     *config.Config
-	logger     *slog.Logger
-	exemptions *exemptions.Resolver
+	client        kubernetes.Interface
+	dynamicClient dynamic.Interface
+	config        *config.Config
+	logger        *slog.Logger
+	exemptions    *exemptions.Resolver
 }
 
 func New(cfg *config.Config, logger *slog.Logger) (*Scanner, error) {
@@ -40,11 +42,17 @@ func New(cfg *config.Config, logger *slog.Logger) (*Scanner, error) {
 		return nil, err
 	}
 
+	dynamicClient, err := dynamic.NewForConfig(k8sConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Scanner{
-		client:     client,
-		config:     cfg,
-		logger:     logger,
-		exemptions: exemptions.NewResolver(client, cfg.ExemptChecks),
+		client:        client,
+		dynamicClient: dynamicClient,
+		config:        cfg,
+		logger:        logger,
+		exemptions:    exemptions.NewResolver(client, cfg.ExemptChecks),
 	}, nil
 }
 

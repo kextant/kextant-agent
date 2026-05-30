@@ -12,12 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -78,13 +80,14 @@ func TestCheckPodImages(t *testing.T) {
 	pod := corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "default"}, Spec: corev1.PodSpec{Containers: []corev1.Container{
 		{Name: "latest", Image: "nginx:latest"},
 		{Name: "missing", Image: "redis"},
+		{Name: "port-missing", Image: "registry.internal:5000/myapp", ImagePullPolicy: corev1.PullAlways},
 		{Name: "always", Image: "busybox:1.36", ImagePullPolicy: corev1.PullAlways},
 	}}}
 	findings := s.checkPodImages(context.Background(), pod)
 	require.Contains(t, findingIDs(findings), "IMG001")
-	require.Contains(t, findingIDs(findings), "IMG002")
+	require.Equal(t, 2, countFindingID(findings, "IMG002"))
 	require.Contains(t, findingIDs(findings), "IMG003")
-	require.Contains(t, findingIDs(findings), "IMG004")
+	require.Equal(t, 1, countFindingID(findings, "IMG004"))
 }
 
 func TestCheckPodSecurity(t *testing.T) {
@@ -138,10 +141,14 @@ func TestCheckNamespaces(t *testing.T) {
 }
 
 func TestCheckDeprecatedAPIs(t *testing.T) {
-	s := testScanner(&networkingv1.Ingress{
-		TypeMeta:   metav1.TypeMeta{APIVersion: "networking.k8s.io/v1beta1", Kind: "Ingress"},
-		ObjectMeta: metav1.ObjectMeta{Name: "legacy", Namespace: "default"},
-	})
+	s := testScanner()
+	legacyIngress := &unstructured.Unstructured{}
+	legacyIngress.SetAPIVersion("networking.k8s.io/v1beta1")
+	legacyIngress.SetKind("Ingress")
+	legacyIngress.SetNamespace("default")
+	legacyIngress.SetName("legacy")
+	s.dynamicClient = dynamicfake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), deprecatedListKinds(), legacyIngress)
+
 	findings, err := s.checkDeprecatedAPIs(context.Background(), []string{"default"})
 	require.NoError(t, err)
 	require.Contains(t, findingIDs(findings), "API001")
@@ -166,11 +173,30 @@ func testScanner(objects ...runtime.Object) *Scanner {
 		ChecksNamespaceEnabled:       true,
 	}
 	return &Scanner{
-		client:     client,
-		config:     cfg,
-		logger:     slog.New(slog.NewTextHandler(io.Discard, nil)),
-		exemptions: exemptions.NewResolver(client, nil),
+		client:        client,
+		dynamicClient: dynamicfake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), deprecatedListKinds()),
+		config:        cfg,
+		logger:        slog.New(slog.NewTextHandler(io.Discard, nil)),
+		exemptions:    exemptions.NewResolver(client, nil),
 	}
+}
+
+func deprecatedListKinds() map[schema.GroupVersionResource]string {
+	listKinds := make(map[schema.GroupVersionResource]string, len(deprecatedAPIResources))
+	for _, apiResource := range deprecatedAPIResources {
+		listKinds[schema.GroupVersionResource{Group: apiResource.group, Version: apiResource.version, Resource: apiResource.resource}] = apiResource.kind + "List"
+	}
+	return listKinds
+}
+
+func countFindingID(findings []types.Finding, id string) int {
+	count := 0
+	for _, finding := range findings {
+		if finding.ID == id {
+			count++
+		}
+	}
+	return count
 }
 
 func findingIDs(findings []types.Finding) []string {

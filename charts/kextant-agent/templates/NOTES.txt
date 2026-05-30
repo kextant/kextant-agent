@@ -1,0 +1,11 @@
+Kextant Agent {{ .Chart.AppVersion }} has been installed.
+
+Useful commands:
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+Generate a local inventory manifest:
+  kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "kextant-agent.fullname" . }} -- ./kextant-agent inventory
+
+Cloud upload is {{ ternary "enabled" "disabled" .Values.config.cloud.enabled }}.
+Helm release metadata RBAC is {{ ternary "enabled" "disabled" .Values.rbac.helmSecrets }}.

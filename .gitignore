@@ -1,5 +1,5 @@
 # Binaries
-kextant-agent
+/kextant-agent
 *.exe
 *.exe~
 *.dll

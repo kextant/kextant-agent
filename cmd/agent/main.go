@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/kextant/kextant-agent/internal/cloud"
 	"github.com/kextant/kextant-agent/internal/config"
@@ -237,10 +238,16 @@ func runServer(logger *slog.Logger) error {
 		logger.Warn(warning)
 	}
 
+	location, err := loadCronLocation(cfg.Timezone)
+	if err != nil {
+		return err
+	}
+
 	logger.Info("starting kextant agent",
 		"version", version,
 		"cluster", cfg.ClusterName,
-		"schedule", cfg.ReportSchedule)
+		"schedule", cfg.ReportSchedule,
+		"timezone", location.String())
 
 	scan, err := scanner.New(cfg, logger)
 	if err != nil {
@@ -256,7 +263,7 @@ func runServer(logger *slog.Logger) error {
 	}()
 
 	// Setup cron scheduler.
-	c := cron.New()
+	c := cron.New(cron.WithLocation(location))
 
 	_, err = c.AddFunc(cfg.ReportSchedule, func() {
 		logger.Info("running scheduled scan")
@@ -312,6 +319,14 @@ func runScheduledScan(cfg *config.Config, scan *scanner.Scanner, logger *slog.Lo
 	}
 
 	return nil
+}
+
+func loadCronLocation(timezone string) (*time.Location, error) {
+	location, err := time.LoadLocation(timezone)
+	if err != nil {
+		return nil, fmt.Errorf("invalid TIMEZONE %q: %w", timezone, err)
+	}
+	return location, nil
 }
 
 func sendReportToTargets(cfg *config.Config, rep *types.Report, logger *slog.Logger) error {
